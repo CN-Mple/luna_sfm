@@ -4,10 +4,11 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <stddef.h>
 
 #ifndef LUNA_ASSERT
 #include <assert.h>
-#define LUNA_ASSERT                     assert
+#define LUNA_ASSERT             assert
 #endif
 
 #ifndef LUNA_SFM_DEPTH
@@ -19,14 +20,14 @@ typedef enum {
         FAIL = !PASS
 } Result;
 
-typedef Result (*sfm_func_t)(void *me);
+typedef Result (*luna_sfm_func_t)(void *me);
 
 struct state {
         struct state *top;
-        sfm_func_t init;
-        sfm_func_t enter;
-        sfm_func_t exec;
-        sfm_func_t exit;
+        luna_sfm_func_t init;
+        luna_sfm_func_t enter;
+        luna_sfm_func_t exec;
+        luna_sfm_func_t exit;
 };
 
 struct StateCtx {
@@ -36,9 +37,9 @@ struct StateCtx {
         bool leaving;
 };
 
-void sfm_init(struct StateCtx *me);
-Result sfm_run(struct StateCtx *me);
-void sfm_set(struct StateCtx *me, struct state *s);
+void luna_sfm_init(struct StateCtx *me);
+Result luna_sfm_run(struct StateCtx *me);
+void luna_sfm_set(struct StateCtx *me, struct state *s);
 
 #endif
 
@@ -49,18 +50,17 @@ static void sfm_tran(struct StateCtx *me, struct state *s);
 static void leaf_enter(struct StateCtx *me, struct state *s, struct state *top);
 static void leaf_leave(struct StateCtx *me, struct state *top);
 
-static bool leaf_of(const struct state *a, const struct state *b);
+static bool          leaf_of (const struct state *a, const struct state *b);
 static struct state *leaf_get(struct state *a, struct state *b);
-static struct state *lca_of(struct state *a, struct state *b);
+static struct state *lca_of  (struct state *a, struct state *b);
 
-void sfm_init(struct StateCtx *me)
+void luna_sfm_init(struct StateCtx *me)
 {
 	LUNA_ASSERT(me != 0);
 
         me->leaving = false;
         me->nest = 0;
 
-        Result result;
         struct state *s;
         struct state *path[LUNA_SFM_DEPTH];
         uint32_t p = 0;
@@ -73,13 +73,13 @@ void sfm_init(struct StateCtx *me)
         while(p--) {
                 s = path[p];
                 if (s->init) {
-                        result = s->init(s);
+                        s->init(s);
                 }
         }
 }
 
 
-Result sfm_run(struct StateCtx *me)
+Result luna_sfm_run(struct StateCtx *me)
 {
 	LUNA_ASSERT(me != 0);
 	LUNA_ASSERT(me->active != 0);
@@ -98,13 +98,13 @@ Result sfm_run(struct StateCtx *me)
         }
 
         if (me->next != NULL) {
-                sfm_tran(me, me->next);
+                luna_sfm_tran(me, me->next);
                 me->next = NULL;
         }
         return result;
 }
 
-void sfm_set(struct StateCtx *me, struct state *s)
+void luna_sfm_set(struct StateCtx *me, struct state *s)
 {
         LUNA_ASSERT(me != NULL);
         LUNA_ASSERT(s != NULL);
@@ -127,7 +127,6 @@ static void sfm_tran(struct StateCtx *me, struct state *s)
         } else {
                 top = lca_of(me->active, s);
         }
-
         leaf_leave(me, top);
         leaf_enter(me, s, top);
 }
@@ -177,8 +176,8 @@ static void leaf_enter(struct StateCtx *me, struct state *s, struct state *top)
 {
         me->nest++;
         int nest = me->nest;
-        me->active = top;
 
+        me->active = top;
         for (struct state *_s = leaf_get(s, top); _s; _s = leaf_get(s, _s)) {
                 me->active = _s;
                 if (_s->enter) {
