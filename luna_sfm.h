@@ -42,7 +42,6 @@ void sfm_set(struct StateCtx *me, struct state *s);
 
 #endif
 
-#define LUNA_SFM_IMPLEMENTATION
 #ifdef LUNA_SFM_IMPLEMENTATION
 
 static void sfm_tran(struct StateCtx *me, struct state *s);
